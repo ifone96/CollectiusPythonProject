@@ -1,0 +1,204 @@
+#BreakDown
+from ast import If
+import datetime
+import glob
+import os
+import shutil
+from tkinter import HIDDEN
+import uuid
+from doctest import DocFileTest
+from email.utils import format_datetime
+from math import fabs
+from operator import index
+from pickle import NONE
+import pandas as pd
+import pyodbc
+import xlsxwriter
+from matplotlib.pyplot import axis
+
+# server = 'localhost\sqlexpress' # for a named instance
+# server = 'myserver,port' # to specify an alternate port
+server = 'collectius-mis.database.windows.net'
+database = 'reporting'
+username = 'mis_TH'
+password = '*93RrUFds6@q'
+connect_database = pyodbc.connect(
+    'DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD=' + password)
+
+# DS
+print(f"RUN PYTHON file: Breakdown All Account Report.py \n server = collectius-mis.database.windows.net \n database = reporting \n SQL query DS..." )
+sql_cmd_DS = """
+--DS
+SELECT [Report_Date]
+      ,[Account_Number]
+      ,[Card_Number]
+      ,[Customer_Name]
+      ,[Business]
+      ,[Reporting_Portfolio]
+      ,[GCV]
+      ,[PV]
+      ,[Outstanding_Balance]
+      ,[Outstanding_Principal]
+      ,[Stage]
+      ,[Write_Off_Year]
+      ,[Write_Off_Month]
+      ,[Load_Date]
+      ,[Last_Call_Date]
+      ,[Call_Time]
+      ,[Days_Last_Called]
+      ,[Days_Last_Called]
+      ,[Last_Called_Date_Bucket]
+      ,[Last_Called_By]
+      ,[Last_Call_Outcome]
+      ,[Last_Call_Disposition]
+      ,[Call_Type]
+      ,[Last_PP_Date]
+      ,[Days_Last_PP]
+      ,[Last_PP_Date_Bucket]
+      ,[Commission_Owner]
+      ,[Installment_Amount]
+      ,[Plan_Balance]
+      ,[Last_Action_Date]
+      ,[Days_Last_Actioned]
+      ,[Last_Action_Date_Bucket]
+      ,[3_Days_Not_Called]
+      ,[3_Days_Not_Actioned]
+      ,[New_Load_Not_Called]
+      ,[30_Days_Not_Actioned]
+      ,[Unit]
+      ,[Plan_Status]
+      ,[Principal_Value]
+      ,[debt_amount]
+      ,[Last_Task]
+      ,[Last_Task_Date]
+      ,[Product_Type]
+      ,[Takeover_Memo]
+  FROM [Report].[vw_Account_Breakdown_TH]
+  WHERE Business IN ('Debt Servicing')
+  AND Stage NOT IN ('Pending Close Review','Pending Paid Review','Closed','Outsourcing')
+  ORDER BY Country, Business, Reporting_Portfolio
+            """
+df_sql_DS = pd.read_sql(sql_cmd_DS, connect_database)
+print("SQL query DS...is DONE!")
+
+#   DP
+print("SQL query DP...")
+sql_cmd_DP = """
+SELECT [Report_Date]
+      ,[Account_Number]
+      ,[Card_Number]
+      ,[Customer_Name]
+      ,[Business]
+      ,[Reporting_Portfolio]
+      ,[GCV]
+      ,[PV]
+      ,[Outstanding_Balance]
+      ,[Outstanding_Principal]
+      ,[Stage]
+      ,[Write_Off_Year]
+      ,[Write_Off_Month]
+      ,[Load_Date]
+      ,[Last_Call_Date]
+      ,[Call_Time]
+      ,[Days_Last_Called]
+      ,[Last_Called_Date_Bucket]
+      ,[Last_Called_By]
+      ,[Last_Call_Outcome]
+      ,[Last_Call_Disposition]
+      ,[Call_Type]
+      ,[Last_PP_Date]
+      ,[Days_Last_PP]
+      ,[Last_PP_Date_Bucket]
+      ,[Commission_Owner]
+      ,[Installment_Amount]
+      ,[Plan_Balance]
+      ,[Last_Action_Date]
+      ,[Days_Last_Actioned]
+      ,[Last_Action_Date_Bucket]
+      ,[3_Days_Not_Called]
+      ,[3_Days_Not_Actioned]
+      ,[New_Load_Not_Called]
+      ,[30_Days_Not_Actioned]
+      ,[Unit]
+      ,[Plan_Status]
+      ,[Principal_Value]
+      ,[debt_amount]
+      ,[Last_Task]
+      ,[Last_Task_Date]
+      ,[Product_Type]
+      ,[Takeover_Memo]
+  FROM [Report].[vw_Account_Breakdown_TH]
+  WHERE Business IN ('Debt Purchase')
+  AND Stage NOT IN ('Pending Close Review','Pending Paid Review','Closed')
+  ORDER BY Country, Business, Reporting_Portfolio
+            """
+df_sql_DP = pd.read_sql(sql_cmd_DP, connect_database)
+print("SQL query DP...is DONE!")
+
+# Set name file with date/times
+todaysdate_filename = str(
+    datetime.datetime.now().strftime("AllAccountsBreakDownPowerBI'%Y%m%d")) + '.xlsx'
+writer = pd.ExcelWriter(todaysdate_filename)
+print("Writing File : " + todaysdate_filename)
+print("Writing Sheet...")
+df_sql_DS.to_excel(writer, index=False, engine='xlsxwriter', sheet_name='DS')
+print("...DS")
+df_sql_DP.to_excel(writer, index=False, engine='xlsxwriter', sheet_name='DP')
+print("...DP")
+
+print("Setting Format...")
+workbook = writer.book
+worksheet = writer.sheets['DS']
+worksheet2 = writer.sheets['DP']
+header_format = workbook.add_format({'bold': True})
+
+worksheet.set_row(0, None, header_format)
+worksheet2.set_row(0, None, header_format)
+
+# for column in df_sql_DS:
+#     column_width = max(df_sql_DS[column].astype(str).map(len).max(), len(column))
+#     col_idx = df_sql_DS.columns.get_loc(column)
+#     worksheet.set_column(col_idx, col_idx, column_width)
+
+# for column in df_sql_DP:
+#     column_width = max(df_sql_DP[column].astype(str).map(len).max(), len(column))
+#     col_idx = df_sql_DP.columns.get_loc(column)
+#     worksheet2.set_column(col_idx, col_idx, column_width)
+
+print("Setting Format...is DONE!")
+
+
+writer.save()
+print("Saved " + todaysdate_filename)
+print(todaysdate_filename + " is DONE!")
+
+src_folder = "Z:\\MIS\\Fone Wasin\\Python\\Breakdown\\"
+dst_folder = "C:\\Users\\wasin.k\\OneDrive - COLLECTIUS SYSTEMS PTE. LTD\\Documents - MIS-TH\\Morning Data"
+pattern = src_folder + "\\*Power*.xls*"
+for files in glob.iglob(pattern, recursive=True):
+    file_name = os.path.basename(files)
+    shutil.copy(files, dst_folder) 
+    print('Moved:', files)
+    break
+
+src_folder = r"Z:\\MIS\\Fone Wasin\\Python\\Breakdown\\"
+dst_folder = r"Z:\\MIS\\Fone Wasin\\Python\\Breakdown\\Uploaded\\" 
+# move file whose name end with string 'xls'
+pattern = src_folder + "*Power*.xls*"
+for files in glob.iglob(pattern, recursive=True):
+    # extract file name form file path
+    file_name = os.path.basename(files)
+    #todayy = str(datetime.now().strftime("(Uploaded) %H%M "))
+    shutil.move(files, dst_folder + file_name)
+    print('Moved:', files)
+    break
+
+path_url = "C:\\Users\\wasin.k\\OneDrive - COLLECTIUS SYSTEMS PTE. LTD\\Documents - MIS-TH\\Morning Data\\"
+path_file = path_url + "*Power*.xls*"
+for filex in glob.iglob(path_file, recursive=True):
+    os.path.realpath(path_url)
+    # FBI OPEN UP!!!!
+    # os.startfile(path_url)
+    os.startfile(filex)
+    print('Opened File&Folder:', filex)
+    break
