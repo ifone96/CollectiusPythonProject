@@ -1,0 +1,21 @@
+<fetch mapping='logical'>
+    <entity name='alternis_account'>
+        <attribute name='alternis_accountid' />
+        <attribute name='alternis_number' />
+        <attribute name='alternis_portfolioid' />
+        <attribute name='alternis_portfolioidname' />
+        <attribute name='ownerid' />
+        <attribute name='owneridtype' />
+        <attribute name='alternis_invoicenumber' />
+        <filter type="and">
+            <condition attribute="alternis_processstage" operator="eq" value="993920014" />
+            <condition attribute="alternis_portfolioidname" value="ULITE SVC TH" operator="eq" />
+        </filter>
+        <link-entity name="alternis_accountclose" from="alternis_accountid" to="alternis_accountid" link-type="inner" alias="aa">
+            <attribute name="alternis_accountcloseid" />
+            <filter type="and">
+                <condition attribute="statecode" operator="eq" value="0" />
+            </filter>
+        </link-entity>
+    </entity>
+</fetch>

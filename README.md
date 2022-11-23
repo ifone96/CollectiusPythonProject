@@ -1,2 +1,2 @@
-# CollectiusPythonProject
-Collectius x PythonProject
+# Python
+MIS DEV Collectius
