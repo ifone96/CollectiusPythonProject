@@ -1,2 +1,2 @@
 # Python
-MIS DEV Collectius
+MIS Data&Analysis Collectius
